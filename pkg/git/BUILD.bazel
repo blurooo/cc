@@ -1,0 +1,18 @@
+load("//tools/build_defs/go:defs.bzl", "go_library")
+
+go_library(
+    name = "git",
+    srcs = [
+        "doc.go",
+        "operation.go",
+    ],
+    importpath = "github.com/blurooo/cc/pkg/git",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//tools/dev_tools/t2cli/tc/internal/errs",
+        "@com_github_go_git_go_git_v5//:go-git",
+        "@com_github_go_git_go_git_v5//plumbing",
+        "@com_github_go_git_go_git_v5//plumbing/format/diff",
+        "@com_github_go_git_go_git_v5//plumbing/transport/http",
+    ],
+)

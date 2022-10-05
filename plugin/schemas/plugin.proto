@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+// defined the plugin
+message Plugin {
+  Dependency dep = 1;
+  Resource resource = 2;
+  Enter enter = 3;
+}
+
+// defined dependencies for tool
+message Dependency {
+
+  // You can run this plugin command while the tool is running
+  message Plugin {
+
+    message RepoFile {
+      string url = 1;
+      string ref = 2;
+      string path = 3;
+    }
+
+    // By default, the file name is used. For example, the file name dep/go.yaml is go.
+    optional string name = 1;
+    oneof type {
+      string file = 2;
+      RepoFile repo_file = 3;
+    }
+
+  }
+
+  repeated Plugin plugins = 1;
+
+}
+
+// defined resources for tool
+// will be retrieved and placed in the tool's directory before installation.
+message Resource {
+
+  message Repo {
+    string url = 1;
+    // default master
+    optional string ref = 2;
+    // default resources
+    optional string path = 3;
+  }
+
+  message Mirror {
+    // the priorities are as follows
+    // 1. os.arch
+    // 2. os
+    // 3. *
+    map<string, string> url = 1;
+    // default resources
+    optional string path = 2;
+    // default true
+    optional bool executable = 3;
+  }
+
+  message Archive {
+    // the same as mirror.url
+    map<string, string> url = 1;
+    // default resources
+    optional string path = 2;
+    // default false
+    optional bool retain_top_folder = 3;
+  }
+
+  repeated Repo repos = 1;
+  repeated Mirror mirrors = 2;
+  repeated Archive archives = 3;
+
+}
+
+// defined enter for tool
+message Enter {
+  // the priorities are as follows
+  // 1. os.arch
+  // 2. os
+  // 3. *
+  map<string, string> shell = 1;
+}

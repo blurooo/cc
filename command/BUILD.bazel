@@ -1,0 +1,37 @@
+load("//tools/build_defs/go:defs.bzl", "go_library", "go_test")
+
+go_library(
+    name = "command",
+    srcs = [
+        "command.go",
+        "doc.go",
+        "file.go",
+        "repo.go",
+    ],
+    importpath = "github.com/blurooo/cc/command",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//tools/dev_tools/t2cli/common/cfile:go_default_library",
+        "//tools/dev_tools/t2cli/tc/internal/errs",
+        "//tools/dev_tools/t2cli/tc/internal/plugin",
+        "//tools/dev_tools/t2cli/tc/internal/repo",
+        "//tools/dev_tools/t2cli/tc/internal/pkg/cslice",
+        "//tools/dev_tools/t2cli/utils/cli:go_default_library",
+        "@in_gopkg_yaml_v3//:yaml_v3",
+    ],
+)
+
+go_test(
+    name = "command_test",
+    srcs = [
+        "command_test.go",
+        "file_test.go",
+        "repo_test.go",
+    ],
+    embed = [":command"],
+    deps = [
+        "//tools/dev_tools/t2cli/tc/internal/plugin",
+        "//tools/dev_tools/t2cli/tc/internal/repo",
+        "//tools/dev_tools/t2cli/utils/cli:go_default_library",
+    ],
+)

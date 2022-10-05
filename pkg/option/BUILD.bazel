@@ -1,0 +1,8 @@
+load("//tools/build_defs/go:defs.bzl", "go_library")
+
+go_library(
+    name = "option",
+    srcs = ["option.go"],
+    importpath = "github.com/blurooo/cc/pkg/option",
+    visibility = ["//:__subpackages__"],
+)

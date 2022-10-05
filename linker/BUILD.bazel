@@ -1,0 +1,19 @@
+load("//tools/build_defs/go:defs.bzl", "go_library", "go_test")
+
+go_library(
+    name = "linker",
+    srcs = ["linker.go"],
+    importpath = "github.com/blurooo/cc/linker",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//tools/dev_tools/t2cli/common/cfile:go_default_library",
+        "//tools/dev_tools/t2cli/utils/cli:go_default_library",
+    ],
+)
+
+go_test(
+    name = "linker_test",
+    srcs = ["linker_test.go"],
+    embed = [":linker"],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

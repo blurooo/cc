@@ -1,0 +1,15 @@
+load("//tools/build_defs/go:defs.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["daemon.go"],
+    importpath = "tencent2/tools/dev_tools/t2cli/daemon",
+    visibility = ["//tools/dev_tools/t2cli:__subpackages__"],
+    deps = [
+        "//tools/dev_tools/t2cli/common/cfile:go_default_library",
+        "//tools/dev_tools/t2cli/daemon/flock:go_default_library",
+        "//tools/dev_tools/t2cli/exit:go_default_library",
+        "//tools/dev_tools/t2cli/utils/cli:go_default_library",
+        "@com_github_shirou_gopsutil//process:go_default_library",
+    ],
+)

@@ -1,0 +1,13 @@
+load("//tools/build_defs/go:defs.bzl", "go_library")
+
+go_library(
+    name = "mirror",
+    srcs = ["mirror.go"],
+    importpath = "github.com/blurooo/cc/mirror",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//tools/dev_tools/t2cli/tc/internal/ioc",
+        "//tools/dev_tools/t2cli/utils/cli:go_default_library",
+        "@com_github_go_resty_resty_v2//:go_default_library",
+    ],
+)

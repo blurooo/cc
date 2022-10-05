@@ -1,0 +1,22 @@
+load("//tools/build_defs/go:defs.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "exit.go",
+        "graceful.go",
+    ],
+    importpath = "tencent2/tools/dev_tools/t2cli/exit",
+    visibility = ["//tools/dev_tools/t2cli:__subpackages__"],
+    deps = [
+        "//tools/dev_tools/t2cli/common/errs:go_default_library",
+        "//tools/dev_tools/t2cli/common/log:go_default_library",
+        "//tools/dev_tools/t2cli/report/data:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["graceful_test.go"],
+    embed = [":go_default_library"],
+)
