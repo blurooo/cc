@@ -14,8 +14,8 @@ import (
 	"github.com/blurooo/cc/command"
 	"github.com/blurooo/cc/config"
 	"github.com/blurooo/cc/ioc"
-	"github.com/blurooo/cc/linker"
 	"github.com/blurooo/cc/mirror"
+	"github.com/blurooo/cc/pkg/linker"
 	"github.com/blurooo/cc/plugin"
 	"github.com/blurooo/cc/resource"
 )

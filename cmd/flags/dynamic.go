@@ -4,17 +4,18 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/blurooo/cc/pkg/helper"
 	"github.com/spf13/cobra"
 
-	"github.com/blurooo/cc/command"
-	"github.com/blurooo/cc/config"
-	"github.com/blurooo/cc/helper"
-	"github.com/blurooo/cc/ioc"
-	"github.com/blurooo/cc/tc"
-	"github.com/blurooo/cc/util/reporter"
 	"tencent2/tools/dev_tools/t2cli/common/cfile"
 	"tencent2/tools/dev_tools/t2cli/report"
 	"tencent2/tools/dev_tools/t2cli/schemas/input"
+
+	"github.com/blurooo/cc/command"
+	"github.com/blurooo/cc/config"
+	"github.com/blurooo/cc/ioc"
+	"github.com/blurooo/cc/tc"
+	"github.com/blurooo/cc/util/reporter"
 )
 
 // cobraRunner cobra 的运行函数

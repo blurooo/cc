@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"tencent2/tools/dev_tools/t2cli/common/cfile"
+	"github.com/blurooo/cc/cli"
 	"github.com/blurooo/cc/errs"
 	"github.com/blurooo/cc/plugin"
-	"tencent2/tools/dev_tools/t2cli/utils/cli"
+	"gopkg.in/yaml.v3"
 )
 
 const nodeSetDesc = "指令集合，使用 -h 获取详细"
@@ -35,7 +35,7 @@ func FileSearcher(dir, commandDir string) Searcher {
 		CommandDir: cmdDir,
 		RootDir:    dir,
 
-		cli: cli.Local(),
+		cli: cli.New(),
 	}
 }
 
@@ -52,7 +52,7 @@ func (f *fileSearcher) collectDirNodes(dir string, parent *Node) ([]Node, error)
 				return nil
 			}
 			if err != nil {
-				return errs.NewProcessErrorWithCode(err, errs.CodeFileWalkError)
+				return errs.NewProcessErrorWithCode(err, errs.CodeFileOperationFail)
 			}
 			if invalidFilePath(info) {
 				return walkError(info)
@@ -125,7 +125,7 @@ func (f *fileSearcher) fileToNode(path string, parent *Node) (*Node, error) {
 
 func dirDesc(dir string) string {
 	path := filepath.Join(dir, ".info")
-	if !cfile.Exist(path) {
+	if _, err := os.Stat(path); err != nil {
 		return nodeSetDesc
 	}
 	data, err := ioutil.ReadFile(path)
