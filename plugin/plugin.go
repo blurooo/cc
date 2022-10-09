@@ -38,7 +38,9 @@ type UpdateOpts struct {
 
 type Plugin interface {
 	Context() Context
-	Info()
+	Name() string
+	Desc() string
+	Version() string
 	Execute(ctx context.Context, opts ExecOpts) error
 	Load(ctx context.Context, opts LoadOpts) error
 	Update(ctx context.Context, opts UpdateOpts) error

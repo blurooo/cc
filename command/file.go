@@ -1,6 +1,7 @@
 package command
 
 import (
+	"context"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -20,6 +21,7 @@ type fileSearcher struct {
 	RootDir string
 	// CommandDir 被查找的文件夹
 	CommandDir string
+	Resolver   *plugin.Resolver
 
 	cli cli.Executor
 }
@@ -107,17 +109,16 @@ func (f *fileSearcher) dirToNode(dir string, parent *Node) (*Node, error) {
 }
 
 func (f *fileSearcher) fileToNode(path string, parent *Node) (*Node, error) {
-	p, err := plugin.NewPlugin(f.cli, path)
+	p, err := f.Resolver.ResolvePath(context.Background(), path)
 	if err != nil {
 		return nil, err
 	}
-	info := p.Info()
 	return &Node{
 		Parent:  parent,
 		IsLeaf:  true,
-		Name:    info.Name,
+		Name:    p.Name(),
 		Dir:     filepath.Dir(path),
-		Desc:    info.Desc,
+		Desc:    p.Desc(),
 		Plugin:  p,
 		AbsPath: path,
 	}, nil
