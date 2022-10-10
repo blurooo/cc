@@ -2,6 +2,7 @@ package command
 
 import (
 	"context"
+	"errors"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -66,7 +67,7 @@ func (f *fileSearcher) collectDirNodes(dir string, parent *Node) ([]Node, error)
 				node, err = f.fileToNode(path, parent)
 			}
 			if err != nil {
-				if err == plugin.ErrUnSupported {
+				if errors.Is(err, errs.ErrUnsupportedPlugin) {
 					return nil
 				}
 				return err

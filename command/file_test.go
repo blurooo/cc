@@ -1,6 +1,7 @@
 package command
 
 import (
+	"context"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -8,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/blurooo/cc/plugin"
-	"tencent2/tools/dev_tools/t2cli/utils/cli"
 )
 
 func Test_fileSearcher_List(t *testing.T) {
@@ -68,12 +68,13 @@ jobs:
 		t.Error(err)
 		return
 	}
-	crPlugin, err := plugin.NewPlugin(cli.Local(), crFile)
+	pr := plugin.Resolver{}
+	crPlugin, err := pr.ResolvePath(context.Background(), crFile)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	helloPlugin, err := plugin.NewPlugin(cli.Local(), helloFile)
+	helloPlugin, err := pr.ResolvePath(context.Background(), helloFile)
 	if err != nil {
 		t.Error(err)
 		return

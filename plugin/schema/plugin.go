@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/blurooo/cc/errs"
 	"gopkg.in/yaml.v3"
 )
 
@@ -93,7 +94,7 @@ func (p *RichPlugin) Unmarshal(data []byte, path string) error {
 	case "json":
 		return p.UnmarshalJson(data)
 	default:
-		return fmt.Errorf("plugin protocol %s is not supported", ext)
+		return fmt.Errorf("plugin protocol %s is not supported, %w", ext, errs.ErrUnsupportedPlugin)
 	}
 }
 

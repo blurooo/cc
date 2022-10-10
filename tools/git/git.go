@@ -9,12 +9,11 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/blurooo/cc/errs"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/format/diff"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
-
-	"github.com/blurooo/cc/errs"
 )
 
 const (
@@ -203,16 +202,19 @@ func (g *Git) PullForce(remote, branch string) error {
 	if err != nil {
 		return err
 	}
-	err = wt.PullContext(context.Background(), &git.PullOptions{
-		RemoteName:    remote,
-		ReferenceName: plumbing.NewBranchReferenceName(branch),
+	opts := &git.PullOptions{
+		RemoteName: remote,
 		Auth: &http.BasicAuth{
 			Username: g.user,
 			Password: g.password,
 		},
 		Force:           true,
 		InsecureSkipTLS: true,
-	})
+	}
+	if branch != "" {
+		opts.ReferenceName = plumbing.NewBranchReferenceName(branch)
+	}
+	err = wt.PullContext(context.Background(), opts)
 	if err == nil {
 		return nil
 	}

@@ -7,6 +7,8 @@ import (
 	"os/exec"
 )
 
+var ErrUnsupportedPlugin = errors.New("unsupported plugin")
+
 // ProcessError 进程错误
 type ProcessError struct {
 	code int

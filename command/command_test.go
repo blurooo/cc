@@ -4,29 +4,6 @@ import (
 	"testing"
 )
 
-func Test_isCommandFile(t *testing.T) {
-	type args struct {
-		extList []string
-		file    string
-	}
-	tests := []struct {
-		name string
-		args args
-		want bool
-	}{
-		{"yaml", args{[]string{"yaml", "json"}, "xxx.yaml"}, true},
-		{"yml", args{[]string{"yml", "json"}, "xxx.yml"}, true},
-		{"json", args{[]string{"yml", "yaml"}, "xxx.json"}, false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := isCommandFile(tt.args.extList, tt.args.file); got != tt.want {
-				t.Errorf("isCommandFile() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestNode_FullName(t *testing.T) {
 	tests := []struct {
 		name string

@@ -4,11 +4,7 @@
 package command
 
 import (
-	"path/filepath"
-	"strings"
-
 	"github.com/blurooo/cc/plugin"
-	"github.com/blurooo/cc/util/cslice"
 )
 
 // Node 指令节点
@@ -49,11 +45,4 @@ func (n *Node) FullName(sep string) string {
 		}
 	}
 	return name
-}
-
-// isCommandFile 是否指令文件
-func isCommandFile(extList []string, file string) bool {
-	ext := filepath.Ext(file)
-	ext = strings.TrimPrefix(ext, ".")
-	return cslice.IncludeString(extList, ext)
 }

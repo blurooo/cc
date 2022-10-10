@@ -6,25 +6,26 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/blurooo/cc/config"
-	"github.com/blurooo/cc/repo"
 	"github.com/blurooo/cc/tools/git"
 )
 
 type repoSearcher struct {
-	Repo       repo.Engine
-	RepoURL    string
-	CommandDir string
+	AutoUpdate   bool
+	AuthUser     string
+	AuthPassword string
+	RepoURL      string
+	CommandDir   string
+	RepoRootPath string
 }
 
 // RepoSearcher 仓库指令查找器
-func RepoSearcher(repoURL string, repo repo.Engine, commandDir string) Searcher {
-	return &repoSearcher{Repo: repo, RepoURL: repoURL, CommandDir: commandDir}
+func RepoSearcher(repoURL string, commandDir string) Searcher {
+	return &repoSearcher{RepoURL: repoURL, CommandDir: commandDir}
 }
 
 // List 从远程仓库搜集指令列表
 func (r *repoSearcher) List() ([]Node, error) {
-	searcher, err := r.toFileSearcher(r.RepoURL)
+	searcher, err := r.toFileSearcher()
 	if err != nil {
 		return nil, err
 	}
@@ -49,48 +50,44 @@ func (r *repoSearcher) fillNodes(nodes []Node) {
 }
 
 // 仓库搜索同样基于文件搜索，只是在文件搜索之前会同步拉取仓库
-func (r *repoSearcher) toFileSearcher(repoURL string) (Searcher, error) {
-	err := r.Repo.Enable(repoURL)
-	if err != nil {
+func (r *repoSearcher) toFileSearcher() (Searcher, error) {
+	if err := r.pull(); err != nil {
 		return nil, err
 	}
-	return FileSearcher(r.Repo.Dir(repoURL), r.CommandDir), nil
+	return FileSearcher(r.repoWorkspace(), r.CommandDir), nil
 }
 
-// Dir 获取仓库保存路径
-func (r *Repo) Dir(repo string) string {
-	httpRepo, _ := git.ToHTTP(repo, true)
+func (r *repoSearcher) repoWorkspace() string {
+	httpRepo, _ := git.ToHTTP(r.RepoURL, true)
 	pathStr := strings.TrimPrefix(strings.TrimSuffix(httpRepo, ".git"), "https://")
 	paths := strings.Split(pathStr, "/")
-	return cfile.Resolve(r.RepoStashDir, filepath.Join(paths...), true)
+	return filepath.Join(r.RepoRootPath, filepath.Join(paths...))
 }
 
-// Enable 同步仓库，不存在时拉取，存在时同步到最新
-func (r *Repo) Enable(repo string) error {
-	repoDir := r.Dir(repo)
-	repoInstance, err := git.Instance(repoDir)
+func (r *repoSearcher) pull() error {
+	rw := r.repoWorkspace()
+	if err := os.MkdirAll(rw, os.ModeDir); err != nil {
+		return fmt.Errorf("create repository path [%s] failed, %w", rw, err)
+	}
+	gi, err := git.Instance(rw)
 	if err != nil {
 		return err
 	}
-	// 不需要拉取
-	if !r.AutoUpdate && repoInstance.IsRepository() {
+	// if the repository is ready and does not need to be updated automatically, skip the pull
+	if !r.AutoUpdate && gi.IsRepository() {
 		return nil
 	}
-	repoInstance.Auth(config.RepoAuthUser, config.RepoAuthPwd)
-	// 已存在时同步
-	if repoInstance.IsRepository() {
-		err = repoInstance.PullForce(git.Origin, git.Master)
+	gi.Auth(r.AuthUser, r.AuthPassword)
+	if gi.IsRepository() {
+		err = gi.PullForce("", "")
 		if err == nil {
 			return nil
 		}
-		// TODO(blurooochen): 这里移除目录，可能在并发的场景下会导致别的进程读取文件出问题
-		// 尝试移除走克隆逻辑
-		_ = os.RemoveAll(repoDir)
+		_ = os.RemoveAll(rw)
 	}
-	// 不存在时克隆
-	err = repoInstance.Clone(repo)
+	err = gi.Clone(r.RepoURL)
 	if err != nil {
-		return fmt.Errorf("拉取仓库失败：%s", err)
+		return fmt.Errorf("clone repository %s to %s failed, %w", r.RepoURL, rw, err)
 	}
 	return nil
 }
