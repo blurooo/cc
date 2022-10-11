@@ -2,71 +2,9 @@ package config
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 	"strings"
-
-	"github.com/blurooo/cc/errs"
-	"github.com/blurooo/cc/ioc"
-	"github.com/blurooo/cc/util/log"
-	"tencent2/tools/dev_tools/t2cli/common/cfile"
-	"tencent2/tools/dev_tools/t2cli/report"
+	"sync"
 )
-
-// AppName 应用名
-const AppName = "tc"
-
-// AliasName 别名
-// TODO(blurooochen): remove tc
-const AliasName = "metax"
-
-const (
-	// repoStageDirName 指令仓库统一保存路径
-	repoStageDirName = "repo"
-	// logDirName 日志文件名
-	logDirName = "log"
-	// daemonDirName 守护文件夹名称
-	daemonDirName = "daemon"
-	// pluginDirName 插件资源工作目录
-	pluginDirName = "plugins"
-	// tempDirName 其它缓存目录
-	tempDirName = "temp"
-	// binDirName 可执行文件存放目录
-	binDirName = "bin"
-	// resourceDirName 资源存放目录
-	resourceDirName = "resource"
-)
-
-var (
-	// Debug 调试
-	Debug bool
-	// Version 工具版本
-	Version = "test"
-	// AppConfDir 程序的配置目录
-	AppConfDir string
-	// LogDir 日志保存目录
-	LogDir string
-	// DaemonDir 守护进程文件夹
-	DaemonDir string
-	// RepoStashDir 仓库暂存目录
-	RepoStashDir string
-	// PluginDir 插件所在目录
-	PluginDir string
-	// TempDir 缓存目录
-	TempDir string
-	// BinDir 可执行文件存放目录
-	BinDir string
-	// ResourceDir 资源目录
-	ResourceDir string
-	// AppConfigFile 应用配置文件
-	AppConfigFile string
-)
-
-// Envs 环境变量
-var Envs []string
-
-// unsetEnvs 管控环境变量，移除子进程的代理能力
-var unsetEnvs = []string{"http_proxy", "https_proxy", "all_proxy", "no_proxy"}
 
 // PersistentConfig 持久化配置
 type PersistentConfig struct {
@@ -85,45 +23,143 @@ type Command struct {
 	Path string `ini:"path" comment:"自定义指令目录，将动态指令集指向本地某个路径"`
 }
 
-func initRuntime() error {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return errs.NewProcessErrorWithCode(err, errs.CodeRuntimeConfigUnready)
-	}
-	AppConfDir = cfile.Resolve(home, fmt.Sprintf(".%s", AppName), true)
-	LogDir = cfile.Resolve(AppConfDir, logDirName, true)
-	DaemonDir = cfile.Resolve(AppConfDir, daemonDirName, true)
-	AppConfigFile = filepath.Join(AppConfDir, "config.ini")
-	RepoStashDir = cfile.Resolve(AppConfDir, repoStageDirName, true)
-	PluginDir = cfile.Resolve(AppConfDir, pluginDirName, true)
-	TempDir = cfile.Resolve(AppConfDir, tempDirName, true)
-	BinDir = cfile.Resolve(AppConfDir, binDirName, false)
-	ResourceDir = cfile.Resolve(AppConfDir, resourceDirName, false)
-	return nil
+type Configurator struct {
+	ConfigFile string
 }
 
-func initEnvs() {
-	envs := os.Environ()
-	for _, env := range envs {
-		if isUnsetEnv(env) {
-			continue
+var (
+	pConfig     *PersistentConfig
+	pConfigOnce sync.Once
+	loadErr     error
+)
+
+// UsageConfigDetail 可用配置详情
+type UsageConfigDetail struct {
+	Key     string
+	Comment string
+}
+
+// LoadConfig 加载持久化配置
+func LoadConfig() (PersistentConfig, error) {
+	pConfigOnce.Do(func() {
+		c, err := load()
+		if err != nil {
+			pConfig = defaultConfig()
+			loadErr = err
+		} else {
+			pConfig = c
 		}
-		Envs = append(Envs, env)
-	}
-}
-
-func isUnsetEnv(env string) bool {
-	for _, unsetEnv := range unsetEnvs {
-		if strings.HasPrefix(env, unsetEnv+"=") {
-			return true
-		}
-	}
-	return false
-}
-
-func initIOC() {
-	ioc.Reporter = report.NewReporter()
-	ioc.Log = log.Logrus(log.Param{
-		Debug: Debug,
 	})
+	if loadErr != nil {
+		ioc.Log.Warnf("无法加载配置：%s，请检查文件 [%s] 内容", loadErr, config.AppConfigFile)
+	}
+	return *pConfig
+}
+
+// SetConfig 保存配置
+func SetConfig(key, value string) error {
+	cfg, err := ini.LooseLoad(config.AppConfigFile)
+	if err != nil {
+		return fmt.Errorf("加载程序配置文件失败：%w", err)
+	}
+	section, key := getSectionAndKeys(key)
+	if section == "" {
+		return fmt.Errorf("请提供 %s 的 section 部分，例如 xx.%s", key, key)
+	}
+	if value == "" {
+		cfg.Section(section).DeleteKey(key)
+	} else {
+		cfg.Section(section).Key(key).SetValue(value)
+	}
+	return cfg.SaveToIndent(config.AppConfigFile, "\t")
+}
+
+// GetConfig 获取配置
+func GetConfig(keyName string) (string, error) {
+	cfg, err := ini.LooseLoad(config.AppConfigFile)
+	if err != nil {
+		return "", fmt.Errorf("加载程序配置文件失败：%w", err)
+	}
+	sectionName, keyName := getSectionAndKeys(keyName)
+	section := cfg.Section(sectionName)
+	if section == nil {
+		return "", fmt.Errorf("配置段 %s 不存在", sectionName)
+	}
+	key := section.Key(keyName)
+	if key == nil {
+		return "", fmt.Errorf("配置 %s.%s 不存在", sectionName, keyName)
+	}
+	return key.Value(), nil
+}
+
+// ListConfig 获取配置列表
+func ListConfig() ([]string, error) {
+	cfg, err := ini.LooseLoad(config.AppConfigFile)
+	if err != nil {
+		return nil, fmt.Errorf("加载程序配置文件失败：%w", err)
+	}
+	var items []string
+	sections := cfg.Sections()
+	for _, section := range sections {
+		keys := section.Keys()
+		for _, key := range keys {
+			items = append(items, fmt.Sprintf("%s.%s=%s", section.Name(), key.Name(), key.Value()))
+		}
+	}
+	return items, nil
+}
+
+// ListValidConfig 获取支持的配置列表
+func ListValidConfig() ([]ValidConfigDetail, error) {
+	cfg := ini.Empty()
+	// 从支持的配置里获取
+	err := cfg.ReflectFrom(&config.PersistentConfig{})
+	if err != nil {
+		return nil, err
+	}
+	var validConfigs []ValidConfigDetail
+	sections := cfg.Sections()
+	for _, section := range sections {
+		keys := section.Keys()
+		for _, key := range keys {
+			validConfig := ValidConfigDetail{
+				Key:     fmt.Sprintf("%s.%s", section.Name(), key.Name()),
+				Comment: key.Comment,
+			}
+			validConfigs = append(validConfigs, validConfig)
+		}
+	}
+	return validConfigs, nil
+}
+
+// load 加载持久化配置
+func load() (*PersistentConfig, error) {
+	cfg, err := ini.LooseLoad(config.AppConfigFile)
+	if err != nil {
+		return nil, err
+	}
+	pConfig := defaultConfig()
+	err = cfg.MapTo(pConfig)
+	if err != nil {
+		return nil, err
+	}
+	return pConfig, nil
+}
+
+func defaultConfig() *config.PersistentConfig {
+	return &config.PersistentConfig{
+		Update: config.Update{
+			Always: true,
+		},
+	}
+}
+
+func getSectionAndKeys(key string) (string, string) {
+	keys := strings.Split(key, ".")
+	section := ""
+	if len(keys) > 1 {
+		section = keys[0]
+		key = strings.Join(keys[1:], ".")
+	}
+	return section, key
 }

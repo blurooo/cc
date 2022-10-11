@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 
 	"github.com/blurooo/cc/tc"
-	"tencent2/tools/dev_tools/t2cli/common/flags"
 )
 
 var configFlags = struct {
@@ -24,7 +24,7 @@ var updateFlags = struct {
 var configCommand = &cobra.Command{
 	Use:               "config",
 	Short:             "配置域相关能力，包括工具版本、程序运行参数等",
-	ValidArgsFunction: flags.EnableFlagsCompletion,
+	ValidArgsFunction: EnableFlagsCompletion,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if configFlags.list {
 			return handleList()
@@ -56,7 +56,7 @@ var configInitCommand = &cobra.Command{
 var configUpdateToolsCommand = &cobra.Command{
 	Use:               "update-tools",
 	Short:             "更新所有工具版本",
-	ValidArgsFunction: flags.EnableFlagsCompletion,
+	ValidArgsFunction: EnableFlagsCompletion,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return tc.UpdateTools(tc.UpdateStrategy{All: updateFlags.All})
 	},
@@ -136,4 +136,19 @@ func handleList() error {
 		fmt.Println(item)
 	}
 	return nil
+}
+
+// EnableFlagsCompletion 开启 flags 的自动补全机制
+func EnableFlagsCompletion(cmd *cobra.Command,
+	_ []string, _ string) ([]string, cobra.ShellCompDirective) {
+	var args []string
+	cmd.Flags().VisitAll(func(flag *pflag.Flag) {
+		args = append(args, fmt.Sprintf("--%s\t%s", flag.Name, flag.Usage))
+		if flag.Shorthand != "" {
+			args = append(args, fmt.Sprintf("-%s\t%s", flag.Shorthand, flag.Usage))
+		}
+	})
+	usage := "get help for command"
+	args = append(args, fmt.Sprintf("--help\t%s", usage), fmt.Sprintf("-h\t%s", usage))
+	return args, cobra.ShellCompDirectiveDefault
 }

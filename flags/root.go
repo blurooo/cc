@@ -11,16 +11,11 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/blurooo/cc/pkg/daemon"
 	"github.com/spf13/cobra"
 
 	"github.com/blurooo/cc/config"
 	"github.com/blurooo/cc/errs"
-	"github.com/blurooo/cc/ioc"
-	"github.com/blurooo/cc/util/log"
-	"github.com/blurooo/cc/util/reporter"
-	"tencent2/tools/dev_tools/t2cli/common/flags"
-	"tencent2/tools/dev_tools/t2cli/daemon"
-	"tencent2/tools/dev_tools/t2cli/report"
 )
 
 const nameSplit = "."
