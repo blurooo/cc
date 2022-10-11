@@ -4,13 +4,16 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/blurooo/cc/config"
 )
 
 type Opts struct {
-	Name    string
-	Debug   bool
-	Version string
-	Layout  Layout
+	Name          string
+	Debug         bool
+	Version       string
+	Layout        Layout
+	DefaultConfig config.PersistentConfig
 }
 
 type Layout struct {
