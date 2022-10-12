@@ -65,7 +65,3 @@ PowerShell:
 		}
 	},
 }
-
-func registerCompletionCmd() {
-	rootCmd.AddCommand(completionCmd)
-}

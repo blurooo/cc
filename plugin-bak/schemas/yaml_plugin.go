@@ -35,7 +35,7 @@ func (p *PluginSchema) Unmarshal(data []byte, path string) error {
 	case "json":
 		return p.UnmarshalJson(data)
 	default:
-		return data, fmt.Errorf("plugin protocol %s is not supported", ext)
+		return fmt.Errorf("plugin protocol %s is not supported", ext)
 	}
 }
 

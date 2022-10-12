@@ -39,8 +39,8 @@ var configCommand = &cobra.Command{
 	},
 }
 
-var configInitCommand = &cobra.Command{
-	Use:    "init",
+var initCommand = &cobra.Command{
+	Use:    "_init",
 	Short:  "初始化程序",
 	Hidden: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -53,8 +53,8 @@ var configInitCommand = &cobra.Command{
 	},
 }
 
-var configUpdateToolsCommand = &cobra.Command{
-	Use:               "update-tools",
+var updateCommand = &cobra.Command{
+	Use:               "update",
 	Short:             "更新所有工具版本",
 	ValidArgsFunction: EnableFlagsCompletion,
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -62,24 +62,14 @@ var configUpdateToolsCommand = &cobra.Command{
 	},
 }
 
-func registerConfigCmd() {
-	setUpdateToolsFlags()
-	setConfigFlags()
-	configCommand.AddCommand(configInitCommand)
-	configCommand.AddCommand(configUpdateToolsCommand)
-	addToRootCmd(configCommand)
-}
-
-func setUpdateToolsFlags() {
-	fs := configUpdateToolsCommand.Flags()
-	fs.BoolVar(&updateFlags.All, "all", false, "全量更新，默认只标记更新状态，在实际被使用时才会真正执行更新")
+func setUpdateFlags() {
+	updateCommand.Flags().BoolVar(&updateFlags.All, "all", false, "update all")
 }
 
 func setConfigFlags() {
-	fs := configCommand.Flags()
-	fs.StringArrayVar(&configFlags.getters, "get", nil, "获取程序配置，支持多条")
-	fs.StringArrayVar(&configFlags.setters, "set", nil, "设置程序运行时参数，支持多条")
-	fs.BoolVar(&configFlags.list, "list", false, "获取配置列表")
+	configCommand.Flags().StringArrayVar(&configFlags.getters, "get", nil, "获取程序配置，支持多条")
+	configCommand.Flags().StringArrayVar(&configFlags.setters, "set", nil, "设置程序运行时参数，支持多条")
+	configCommand.Flags().BoolVar(&configFlags.list, "list", false, "获取配置列表")
 
 	_ = configCommand.RegisterFlagCompletionFunc("get", configCompletion)
 	_ = configCommand.RegisterFlagCompletionFunc("set", configCompletion)

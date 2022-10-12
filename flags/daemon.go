@@ -7,7 +7,7 @@ import (
 )
 
 var daemonCommand = &cobra.Command{
-	Use:    "daemon",
+	Use:    "_daemon",
 	Short:  "启用常驻进程",
 	Hidden: true,
 	RunE:   commandDaemon,
@@ -15,8 +15,4 @@ var daemonCommand = &cobra.Command{
 
 func commandDaemon(_ *cobra.Command, _ []string) error {
 	return tc.StartDaemon()
-}
-
-func registerDaemonCmd() {
-	addToRootCmd(daemonCommand)
 }
