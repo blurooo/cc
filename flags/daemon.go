@@ -7,7 +7,7 @@ import (
 )
 
 var daemonCommand = &cobra.Command{
-	Use:    "_daemon",
+	Use:    "__daemon",
 	Short:  "启用常驻进程",
 	Hidden: true,
 	RunE:   commandDaemon,

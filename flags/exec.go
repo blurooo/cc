@@ -6,9 +6,9 @@ import (
 	"github.com/blurooo/cc/tc"
 )
 
-// 负责调起 tc 主程序执行依赖插件（包含插件的资源加载、入口解析、数据上报等逻辑），没必要对外开放，所以进行隐藏
-var execCommand = &cobra.Command{
-	Use:                "_exec <plugin> ...",
+// ExecCommand 负责调起 tc 主程序执行依赖插件（包含插件的资源加载、入口解析、数据上报等逻辑），没必要对外开放，所以进行隐藏
+var ExecCommand = &cobra.Command{
+	Use:                "__exec <plugin> ...",
 	Short:              "exec the special plugin file",
 	DisableFlagParsing: true,
 	SilenceErrors:      true,

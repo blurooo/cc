@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/blurooo/cc/config"
+	"github.com/blurooo/cc/log"
 )
 
 type MixedCommandLineTool struct {
@@ -28,6 +29,7 @@ func NewMixedCommandLineTool(app config.ApplicationConfig) (*MixedCommandLineToo
 	if os.Getenv("DEBUG") == "true" {
 		app.Debug = true
 	}
+	app.Logger = log.New(app.Debug)
 	app.WorkspaceLayout = config.BuildWorkspaceLayout(app.WorkspaceLayout)
 	configurator, err := config.NewConfigurator(app.WorkspaceLayout.ConfigFile, app.DefaultPersistentConfig)
 	if err != nil {

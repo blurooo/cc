@@ -1,5 +1,9 @@
 package log
 
+import (
+	"github.com/sirupsen/logrus"
+)
+
 type Logger interface {
 	Info(v ...interface{})
 	Infof(format string, v ...interface{})
@@ -9,4 +13,15 @@ type Logger interface {
 	Debugf(format string, v ...interface{})
 	Warn(v ...interface{})
 	Warnf(format string, v ...interface{})
+}
+
+func New(debug bool) Logger {
+	l := logrus.New()
+	l.SetFormatter(&logrus.TextFormatter{
+		ForceColors: true,
+	})
+	if debug {
+		l.SetLevel(logrus.DebugLevel)
+	}
+	return l
 }

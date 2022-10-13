@@ -7,10 +7,30 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var completionCmd = &cobra.Command{
-	Use:   "completion [bash|zsh|fish|powershell]",
-	Short: "Generate completion script",
-	Long: fmt.Sprintf(`To load completions:
+func getCompletingCommand(rc *cobra.Command) *cobra.Command {
+	return &cobra.Command{
+		Use:                   "completion [bash|zsh|fish|powershell]",
+		Short:                 "Generate completion script",
+		Long:                  fmt.Sprintf(completingDoc, rc.Name()),
+		DisableFlagsInUseLine: true,
+		ValidArgs:             []string{"bash", "zsh", "fish", "powershell"},
+		Args:                  cobra.ExactValidArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			switch args[0] {
+			case "bash":
+				_ = cmd.Root().GenBashCompletion(os.Stdout)
+			case "zsh":
+				_ = cmd.Root().GenZshCompletion(os.Stdout)
+			case "fish":
+				_ = cmd.Root().GenFishCompletion(os.Stdout, true)
+			case "powershell":
+				_ = cmd.Root().GenPowerShellCompletionWithDesc(os.Stdout)
+			}
+		},
+	}
+}
+
+const completingDoc = `To load completions:
 
 Bash:
 
@@ -48,20 +68,4 @@ PowerShell:
   # To load completions for every new session, run:
   PS> %[1]s completion powershell > %[1]s.ps1
   # and source this file from your PowerShell profile.
-`, rootCmd.Name()),
-	DisableFlagsInUseLine: true,
-	ValidArgs:             []string{"bash", "zsh", "fish", "powershell"},
-	Args:                  cobra.ExactValidArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		switch args[0] {
-		case "bash":
-			_ = cmd.Root().GenBashCompletion(os.Stdout)
-		case "zsh":
-			_ = cmd.Root().GenZshCompletion(os.Stdout)
-		case "fish":
-			_ = cmd.Root().GenFishCompletion(os.Stdout, true)
-		case "powershell":
-			_ = cmd.Root().GenPowerShellCompletionWithDesc(os.Stdout)
-		}
-	},
-}
+`

@@ -43,7 +43,7 @@ func (f *Flags) Execute() error {
 		return nil
 	}
 	// 处理动态命令
-	if err = initDynamicCommands(cmd, err); err != nil {
+	if err = f.initDynamicCommands(rc, cmd, err); err != nil {
 		return err
 	}
 	// 成功处理自动补全时，不需要继续往下走
@@ -184,7 +184,7 @@ func (f *Flags) initBuiltinCmd(rc *cobra.Command) {
 		return errs.NewProcessErrorWithCode(err, errs.CodeParamInvalid)
 	})
 
-	addToRootCmd(rc, execCommand)
+	addToRootCmd(rc, ExecCommand)
 	if f.ApplicationConfig.Flags.EnableConfig {
 		setConfigFlags()
 		addToRootCmd(rc, configCommand)
@@ -195,19 +195,19 @@ func (f *Flags) initBuiltinCmd(rc *cobra.Command) {
 	addToRootCmd(rc, updateCommand)
 	addToRootCmd(rc, daemonCommand)
 	AddInstallCommand(rc, f.ApplicationConfig)
-	addToRootCmd(rc, completionCmd)
+	addToRootCmd(rc, getCompletingCommand(rc))
 }
 
-func initDynamicCommands(cmd *cobra.Command, err error) error {
+func (f *Flags) initDynamicCommands(rc, cmd *cobra.Command, err error) error {
 	if err != nil {
-		return registerDynamicCommands()
+		return f.registerDynamicCommands(rc)
 	}
 	if !cmd.HasParent() {
-		return registerDynamicCommands()
+		return f.registerDynamicCommands(rc)
 	}
 	// 存在子命令则说明属于命令集，可以与动态命令进行混排
 	if cmd.HasSubCommands() {
-		return registerDynamicCommands()
+		return f.registerDynamicCommands(rc)
 	}
 	return nil
 }
