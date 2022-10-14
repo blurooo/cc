@@ -29,8 +29,9 @@ type Repo struct {
 
 // Configurator is a configurator to config the application with ini syntax.
 type Configurator struct {
-	ConfigFile       string
-	PersistentConfig *PersistentConfig
+	ConfigFile string
+
+	persistentConfig *PersistentConfig
 }
 
 // NewConfigurator create a new configurator to config the application.
@@ -44,13 +45,13 @@ func NewConfigurator(configFile string, defaultConfig PersistentConfig) (*Config
 	}
 	return &Configurator{
 		ConfigFile:       configFile,
-		PersistentConfig: &defaultConfig,
+		persistentConfig: &defaultConfig,
 	}, nil
 }
 
 // LoadConfig will load all configs as PersistentConfig
 func (c *Configurator) LoadConfig() PersistentConfig {
-	return *c.PersistentConfig
+	return *c.persistentConfig
 }
 
 // SetConfig set and save the config.

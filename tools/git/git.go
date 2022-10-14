@@ -62,8 +62,8 @@ func (g *Git) Auth(user, pwd string) {
 	g.password = pwd
 }
 
-// GetURL 获取URL
-func (g *Git) GetURL(domain, group, project string) string {
+// GetUrl 获取URL
+func (g *Git) GetUrl(domain, group, project string) string {
 	return fmt.Sprintf("https://%s/%s/%s", domain,
 		strings.Trim(group, "/"),
 		strings.TrimPrefix(project, "/"))
@@ -74,12 +74,12 @@ func (g *Git) IsRepository() bool {
 	return g.repository != nil
 }
 
-// ToSSH 将url转换为ssh形式
-func ToSSH(url string) (string, error) {
-	if IsSSH(url) {
+// ToSsh 将url转换为ssh形式
+func ToSsh(url string) (string, error) {
+	if IsSsh(url) {
 		return url, nil
 	}
-	if !IsHTTP(url) {
+	if !IsHttp(url) {
 		return "", errors.New("无法识别的url")
 	}
 	url = strings.Replace(url, httpPrefix, "", 1)
@@ -94,16 +94,16 @@ func ToSSH(url string) (string, error) {
 	return url, nil
 }
 
-// ToHTTP 将url转换为http形式
-func ToHTTP(url string, secure bool) (string, error) {
-	if IsHTTP(url) {
-		return httpToHTTPURL(url, secure), nil
+// ToHttp 将url转换为http形式
+func ToHttp(url string, secure bool) (string, error) {
+	if IsHttp(url) {
+		return httpToHttpUrl(url, secure), nil
 	}
 	toHTTPPrefix := httpPrefix
 	if secure {
 		toHTTPPrefix = httpSecurePrefix
 	}
-	if IsSSH(url) {
+	if IsSsh(url) {
 		url = strings.Replace(url, ":", "/", 1)
 		url = strings.Replace(url, sshPrefix, toHTTPPrefix, 1)
 		return url, nil
@@ -112,7 +112,7 @@ func ToHTTP(url string, secure bool) (string, error) {
 }
 
 // 将任意http形式的url转换为http或https形式
-func httpToHTTPURL(url string, secure bool) string {
+func httpToHttpUrl(url string, secure bool) string {
 	isSecure := strings.Contains(url, httpSecurePrefix)
 	if secure == isSecure {
 		return url
@@ -125,21 +125,21 @@ func httpToHTTPURL(url string, secure bool) string {
 	return url
 }
 
-// IsSSH 是否ssh地址
-func IsSSH(url string) bool {
+// IsSsh 是否ssh地址
+func IsSsh(url string) bool {
 	match, err := regexp.MatchString(sshReg, url)
 	return err == nil && match
 }
 
-// IsHTTP 是否http地址
-func IsHTTP(url string) bool {
+// IsHttp 是否http地址
+func IsHttp(url string) bool {
 	match, err := regexp.MatchString(httpReg, url)
 	return err == nil && match
 }
 
-// IsGitURL 是否git仓库地址
-func IsGitURL(url string) bool {
-	return IsHTTP(url) || IsSSH(url)
+// IsGitUrl 是否git仓库地址
+func IsGitUrl(url string) bool {
+	return IsHttp(url) || IsSsh(url)
 }
 
 // Clone 克隆项目
@@ -259,7 +259,7 @@ func (g *Git) Head() (string, error) {
 	return head.String(), nil
 }
 
-func (g *Git) GetRemoteURL(remote string) (string, error) {
+func (g *Git) GetRemoteUrl(remote string) (string, error) {
 	r, err := g.repository.Remote(remote)
 	if err != nil {
 		return "", err
@@ -268,6 +268,18 @@ func (g *Git) GetRemoteURL(remote string) (string, error) {
 		return r.Config().URLs[0], nil
 	}
 	return "", fmt.Errorf("not remote url")
+}
+
+func (g *Git) GetRemoteUrls() ([]string, error) {
+	remotes, err := g.repository.Remotes()
+	if err != nil {
+		return nil, err
+	}
+	urls := make([]string, 0, len(remotes))
+	for _, remote := range remotes {
+		urls = append(urls, remote.Config().URLs...)
+	}
+	return urls, nil
 }
 
 // LastChange 获取某个文件最后一次变更的提交ID

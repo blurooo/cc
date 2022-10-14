@@ -58,7 +58,7 @@ func (r *repoSearcher) toFileSearcher() (Searcher, error) {
 }
 
 func (r *repoSearcher) repoWorkspace() string {
-	httpRepo, _ := git.ToHTTP(r.RepoURL, true)
+	httpRepo, _ := git.ToHttp(r.RepoURL, true)
 	pathStr := strings.TrimPrefix(strings.TrimSuffix(httpRepo, ".git"), "https://")
 	paths := strings.Split(pathStr, "/")
 	return filepath.Join(r.RepoRootPath, filepath.Join(paths...))

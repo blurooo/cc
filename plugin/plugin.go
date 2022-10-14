@@ -299,11 +299,11 @@ func (r *Resolver) ResolvePath(_ context.Context, path string) (Plugin, error) {
 	if err != nil {
 		return nil, err
 	}
-	url, err := gi.GetRemoteURL("origin")
+	url, err := gi.GetRemoteUrl("origin")
 	if err != nil {
 		return nil, err
 	}
-	httpURL, _ := git.ToHTTP(url, true)
+	httpURL, _ := git.ToHttp(url, true)
 	paths := strings.TrimPrefix(strings.TrimSuffix(httpURL, ".git"), "https://")
 	wd := filepath.Join(r.PluginRootPath, paths)
 	pc := Context{

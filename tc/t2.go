@@ -6,16 +6,10 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	"tencent2/tools/dev_tools/t2cli/report"
-	"tencent2/tools/dev_tools/t2cli/utils/cli"
-
 	"github.com/blurooo/cc/command"
 	"github.com/blurooo/cc/config"
-	"github.com/blurooo/cc/ioc"
 	"github.com/blurooo/cc/pkg/linker"
 	"github.com/blurooo/cc/plugin"
-	"github.com/blurooo/cc/repo"
-	"github.com/blurooo/cc/util/reporter"
 )
 
 var cliClient = cli.Local()

@@ -106,7 +106,7 @@ func (f *Flags) toCobraHelper(node command.Node, defaultHelper func(cmd *cobra.C
 			err = helper.Help(helpFile)
 		}
 		if err != nil {
-			f.ApplicationConfig.Logger.Errorf("get help failed: %v", err)
+			f.Config.Logger.Errorf("get help failed: %v", err)
 		}
 	}
 }

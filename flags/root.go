@@ -23,16 +23,16 @@ const daemonName = "cc.daemon"
 var commandIndex = map[string]*cobra.Command{}
 
 type Flags struct {
-	ApplicationConfig config.ApplicationConfig
+	Config config.Application
 }
 
 func (f *Flags) Execute() error {
 	rc := &cobra.Command{
-		Use:               f.ApplicationConfig.Name,
-		Short:             f.ApplicationConfig.Desc,
-		Long:              f.ApplicationConfig.Desc,
+		Use:               f.Config.Name,
+		Short:             f.Config.Desc,
+		Long:              f.Config.Desc,
 		ValidArgsFunction: EnableFlagsCompletion,
-		Version:           fmt.Sprintf("%s (%s.%s)", f.ApplicationConfig.Version, runtime.GOOS, runtime.GOARCH),
+		Version:           fmt.Sprintf("%s (%s.%s)", f.Config.Version, runtime.GOOS, runtime.GOARCH),
 	}
 	// 注册内建命令
 	f.initBuiltinCmd(rc)
@@ -84,7 +84,7 @@ func (f *Flags) handleComplete(rc *cobra.Command) bool {
 
 func (f *Flags) handleDynamicComplete(cmd *cobra.Command, args []string) error {
 	// 移除掉所有日志相关的干扰性输出
-	f.ApplicationConfig.Logger = log.Discard
+	f.Config.Logger = log.Discard
 	args = append([]string{os.Args[1]}, args...)
 	if cmd.RunE != nil {
 		return cmd.RunE(cmd, args)
@@ -143,6 +143,9 @@ func buildCommandSetIndex(prefix string, commands []*cobra.Command) {
 }
 
 func (f *Flags) startDaemon(cmd *cobra.Command) bool {
+	if !f.Config.Flags.EnableDaemon {
+		return false
+	}
 	// 隐藏的内建命令不启动后台进程，避免像下面的情况
 	// 1. config init 命令启动了错误的常驻进程
 	// 2. exec 这类频繁被调的命令没必要重启常驻进程
@@ -152,11 +155,11 @@ func (f *Flags) startDaemon(cmd *cobra.Command) bool {
 	dp := f.daemonProcess()
 	info, err := dp.Start()
 	if err != nil {
-		f.ApplicationConfig.Logger.Debugf("start daemon process failed: %v", err)
+		f.Config.Logger.Debugf("start daemon process failed: %v", err)
 		return false
 	}
 	if info != nil {
-		f.ApplicationConfig.Logger.Debugf("start daemon process succeeded: %#v", info)
+		f.Config.Logger.Debugf("start daemon process succeeded: %#v", info)
 		return daemon.IsDaemon()
 	}
 	return false
@@ -166,12 +169,12 @@ func (f *Flags) daemonProcess() *daemon.AsyncProcess {
 	return &daemon.AsyncProcess{
 		Name: daemonName,
 		// 传递版本，使得在 tc 更新版本时，得以重载守护进程
-		Version:     f.ApplicationConfig.Version,
-		WorkDir:     f.ApplicationConfig.WorkspaceLayout.RootPath,
+		Version:     f.Config.Version,
+		WorkDir:     f.Config.WorkspaceLayout.RootPath,
 		Args:        []string{daemonCommand.Name()},
 		Singleton:   true,
-		ProcessFile: filepath.Join(f.ApplicationConfig.WorkspaceLayout.DaemonPath, fmt.Sprintf("%s.pid", daemonName)),
-		LogFile:     filepath.Join(f.ApplicationConfig.WorkspaceLayout.DaemonPath, fmt.Sprintf("%s.log", daemonName)),
+		ProcessFile: filepath.Join(f.Config.WorkspaceLayout.DaemonPath, fmt.Sprintf("%s.pid", daemonName)),
+		LogFile:     filepath.Join(f.Config.WorkspaceLayout.DaemonPath, fmt.Sprintf("%s.log", daemonName)),
 	}
 }
 
@@ -185,7 +188,7 @@ func (f *Flags) initBuiltinCmd(rc *cobra.Command) {
 	})
 
 	addToRootCmd(rc, ExecCommand)
-	if f.ApplicationConfig.Flags.EnableConfig {
+	if f.Config.Flags.EnableConfig {
 		setConfigFlags()
 		addToRootCmd(rc, configCommand)
 	}
@@ -193,12 +196,17 @@ func (f *Flags) initBuiltinCmd(rc *cobra.Command) {
 	addToRootCmd(rc, initCommand)
 	setUpdateFlags()
 	addToRootCmd(rc, updateCommand)
-	addToRootCmd(rc, daemonCommand)
-	AddInstallCommand(rc, f.ApplicationConfig)
+	if f.Config.Flags.EnableDaemon {
+		addToRootCmd(rc, daemonCommand)
+	}
+	AddInstallCommand(rc, f.Config)
 	addToRootCmd(rc, getCompletingCommand(rc))
 }
 
 func (f *Flags) initDynamicCommands(rc, cmd *cobra.Command, err error) error {
+	if !f.Config.Flags.EnableDynamic {
+		return nil
+	}
 	if err != nil {
 		return f.registerDynamicCommands(rc)
 	}

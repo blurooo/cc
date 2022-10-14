@@ -15,7 +15,7 @@ var installFlags = struct {
 }{}
 
 // 负责调起 tc 主程序执行依赖插件（包含插件的资源加载、入口解析、数据上报等逻辑），没必要对外开放，所以进行隐藏
-func getInstallCommand(config config.ApplicationConfig) *cobra.Command {
+func getInstallCommand(config config.Application) *cobra.Command {
 	return &cobra.Command{
 		Use:           "install <name> [--list]",
 		Short:         "安装某个命令到系统中，后续将直接使用命令进行调用",
@@ -39,7 +39,7 @@ func getInstallCommand(config config.ApplicationConfig) *cobra.Command {
 	}
 }
 
-func handleInstallList(config config.ApplicationConfig) error {
+func handleInstallList(config config.Application) error {
 	commands, err := tc.InstallableList()
 	if err != nil {
 		return err
@@ -57,7 +57,7 @@ func handleInstallList(config config.ApplicationConfig) error {
 	return nil
 }
 
-func handleInstall(config config.ApplicationConfig, args []string) error {
+func handleInstall(config config.Application, args []string) error {
 	if len(args) == 0 {
 		config.Logger.Warnf("参数不全，请提供需要安装的指令名")
 		return nil
@@ -75,7 +75,7 @@ func handleInstall(config config.ApplicationConfig, args []string) error {
 	return nil
 }
 
-func install(config config.ApplicationConfig, commands []command.Node, name string) error {
+func install(config config.Application, commands []command.Node, name string) error {
 	absPath := getAbsPath(commands, name)
 	if absPath == "" {
 		config.Logger.Warnf("[%s] 未找到，请确认名称是否正确", name)
@@ -102,7 +102,7 @@ func setInstallFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&installFlags.list, "list", false, "获取可安装命令列表")
 }
 
-func AddInstallCommand(rc *cobra.Command, config config.ApplicationConfig) {
+func AddInstallCommand(rc *cobra.Command, config config.Application) {
 	installCommand := getInstallCommand(config)
 	setInstallFlags(installCommand)
 	addToRootCmd(rc, installCommand)
