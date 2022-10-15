@@ -11,12 +11,14 @@ import (
 	"github.com/blurooo/cc/tools/git"
 )
 
-type SourceLoader func([]Searcher, error)
+type SourceLoader func() ([]Searcher, error)
 
 type Source struct {
-	Workspace    string
-	App          config.Application
-	Configurator config.Configurator
+	Workspace        string
+	Name             string
+	GroupName        string
+	CommandDirectory string
+	Configurator     *config.Configurator
 }
 
 func (s *Source) EnvSource() ([]Searcher, error) {
@@ -27,13 +29,13 @@ func (s *Source) EnvSource() ([]Searcher, error) {
 	if !git.IsGitUrl(source) {
 		return nil, fmt.Errorf("invalid repository url: %s", source)
 	}
-	return []Searcher{RepoSearcher(source, s.App.CommandDirectory)}, nil
+	return []Searcher{RepoSearcher(source, s.CommandDirectory)}, nil
 }
 
 func (s *Source) ProjectSource() ([]Searcher, error) {
-	cmd := filepath.Join(s.Workspace, "."+s.App.Name)
+	cmd := filepath.Join(s.Workspace, "."+s.Name)
 	if d, err := os.Stat(cmd); err == nil && d.IsDir() {
-		return []Searcher{FileSearcher(cmd, s.App.CommandDirectory)}, nil
+		return []Searcher{FileSearcher(cmd, s.CommandDirectory)}, nil
 	}
 	return nil, nil
 }
@@ -56,20 +58,24 @@ func (s *Source) ProjectGroupSource() ([]Searcher, error) {
 	}
 	searchers := make([]Searcher, 0, len(groups))
 	for _, group := range groups {
-		searchers = append(searchers, RepoSearcher(group, s.App.CommandDirectory))
+		searchers = append(searchers, RepoSearcher(group, s.CommandDirectory))
 	}
 	return searchers, nil
 }
 
-func (s *Source) DefaultSource() ([]Searcher, error) {
+func (s *Source) ConfigSource() ([]Searcher, error) {
 	pc := s.Configurator.LoadConfig()
 	if pc.Command.Repo != "" {
-		return []Searcher{RepoSearcher(pc.Command.Repo, s.App.CommandDirectory)}, nil
+		return []Searcher{RepoSearcher(pc.Command.Repo, s.CommandDirectory)}, nil
 	}
 	if pc.Command.Path != "" {
 		return []Searcher{FileSearcher(pc.Command.Path, "")}, nil
 	}
 	return nil, nil
+}
+
+func (s *Source) RepositorySource(url string) ([]Searcher, error) {
+	return []Searcher{RepoSearcher(url, s.CommandDirectory)}, nil
 }
 
 func (s *Source) groupUrls(repo string) []string {
@@ -91,7 +97,7 @@ func (s *Source) groupUrls(repo string) []string {
 	for _, group := range groups {
 		nextGroup += group + "/"
 		groupRepo := fmt.Sprintf("%s://%s/%s%s.git", uri.Scheme,
-			uri.Host, nextGroup, s.App.GroupName)
+			uri.Host, nextGroup, s.GroupName)
 		repos = append(repos, groupRepo)
 	}
 	return repos

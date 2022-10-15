@@ -47,10 +47,10 @@ type Plugin interface {
 	Update(ctx context.Context, opts UpdateOpts) error
 }
 
-// RichPlugin is a plugin implementer based on YAML/JSON/.. syntax.
-type RichPlugin struct {
+// MixedPlugin is a plugin implementer based on YAML/JSON/.. syntax.
+type MixedPlugin struct {
 	Pc       Context
-	Schema   *schema.RichPlugin
+	Schema   *schema.MixedPlugin
 	LoadInfo *LoadInfo
 	Loader   *Resolver
 }
@@ -70,29 +70,29 @@ type LoadInfo struct {
 	LoadTime time.Time
 }
 
-func (p *RichPlugin) Name() string {
+func (p *MixedPlugin) Name() string {
 	if p.Schema.Name != "" {
 		return p.Schema.Name
 	}
 	return getPluginName(p.Pc.Path)
 }
 
-func (p *RichPlugin) Desc() string {
+func (p *MixedPlugin) Desc() string {
 	return p.Schema.Desc
 }
 
-func (p *RichPlugin) Version() string {
+func (p *MixedPlugin) Version() string {
 	if p.Schema.Version != "" {
 		return p.Schema.Version
 	}
 	return "latest"
 }
 
-func (p *RichPlugin) Context() Context {
+func (p *MixedPlugin) Context() Context {
 	return p.Pc
 }
 
-func (p *RichPlugin) Execute(ctx context.Context, opts ExecOpts) error {
+func (p *MixedPlugin) Execute(ctx context.Context, opts ExecOpts) error {
 	if err := p.exec(ctx, p.Schema.PreRun, ExecOpts{Envs: opts.Envs}); err != nil {
 		return fmt.Errorf("the plugin cannot be pre-run, %w", err)
 	}
@@ -105,7 +105,7 @@ func (p *RichPlugin) Execute(ctx context.Context, opts ExecOpts) error {
 	return nil
 }
 
-func (p *RichPlugin) Load(ctx context.Context, opts LoadOpts) error {
+func (p *MixedPlugin) Load(ctx context.Context, opts LoadOpts) error {
 	// If the plugin has already been loaded, ignore it
 	if p.LoadInfo != nil && p.LoadInfo.Sum == p.Pc.Sum {
 		return nil
@@ -131,11 +131,11 @@ func (p *RichPlugin) Load(ctx context.Context, opts LoadOpts) error {
 	return p.writeLoadInfo()
 }
 
-func (p *RichPlugin) Update(ctx context.Context, opts UpdateOpts) error {
+func (p *MixedPlugin) Update(ctx context.Context, opts UpdateOpts) error {
 	return nil
 }
 
-func (p *RichPlugin) exec(ctx context.Context, command map[string]string, opts ExecOpts) error {
+func (p *MixedPlugin) exec(ctx context.Context, command map[string]string, opts ExecOpts) error {
 	cmd, err := selectAndParseResource(p.Pc, command)
 	if err != nil {
 		return err
@@ -152,7 +152,7 @@ func (p *RichPlugin) exec(ctx context.Context, command map[string]string, opts E
 	})
 }
 
-func (p *RichPlugin) writeLoadInfo() error {
+func (p *MixedPlugin) writeLoadInfo() error {
 	info := &LoadInfo{
 		Sum:      p.Pc.Sum,
 		LoadTime: time.Now(),
@@ -167,7 +167,7 @@ func (p *RichPlugin) writeLoadInfo() error {
 	return nil
 }
 
-func (p *RichPlugin) loadDependencies(ctx context.Context, opts LoadOpts) error {
+func (p *MixedPlugin) loadDependencies(ctx context.Context, opts LoadOpts) error {
 	if p.Schema.Dependency == nil {
 		return nil
 	}
@@ -179,7 +179,7 @@ func (p *RichPlugin) loadDependencies(ctx context.Context, opts LoadOpts) error 
 	return nil
 }
 
-func (p *RichPlugin) loadDependentPlugin(ctx context.Context, dp *schema.DependentPlugin, opts LoadOpts) error {
+func (p *MixedPlugin) loadDependentPlugin(ctx context.Context, dp *schema.DependentPlugin, opts LoadOpts) error {
 	plugin, err := p.resolveDependentPlugin(ctx, dp)
 	if err != nil {
 		return err
@@ -197,7 +197,7 @@ func (p *RichPlugin) loadDependentPlugin(ctx context.Context, dp *schema.Depende
 	return err
 }
 
-func (p *RichPlugin) checkDependentPlugin(dp *schema.DependentPlugin) error {
+func (p *MixedPlugin) checkDependentPlugin(dp *schema.DependentPlugin) error {
 	if dp.File == "" &&
 		(dp.RepoFile == nil || dp.RepoFile.URL == "" || dp.RepoFile.File == "") {
 		return errors.New("one of <plugin.file> and <plugin.url + plugin.path> must be set")
@@ -205,7 +205,7 @@ func (p *RichPlugin) checkDependentPlugin(dp *schema.DependentPlugin) error {
 	return checkRealFile(dp.Filepath())
 }
 
-func (p *RichPlugin) resolveDependentPlugin(ctx context.Context, dp *schema.DependentPlugin) (Plugin, error) {
+func (p *MixedPlugin) resolveDependentPlugin(ctx context.Context, dp *schema.DependentPlugin) (Plugin, error) {
 	if err := p.checkDependentPlugin(dp); err != nil {
 		return nil, err
 	}
@@ -216,7 +216,7 @@ func (p *RichPlugin) resolveDependentPlugin(ctx context.Context, dp *schema.Depe
 	return p.Loader.ResolveRepoFile(ctx, dp.RepoFile.URL, dp.RepoFile.Ref, dp.RepoFile.File)
 }
 
-func (p *RichPlugin) loadResources(ctx context.Context, opts LoadOpts) error {
+func (p *MixedPlugin) loadResources(ctx context.Context, opts LoadOpts) error {
 	for _, mirror := range p.Schema.Resource.Mirrors {
 		if err := p.LoadResourceMirror(ctx, mirror); err != nil {
 			return fmt.Errorf("load mirror resource failed: %w", err)
@@ -235,7 +235,7 @@ func (p *RichPlugin) loadResources(ctx context.Context, opts LoadOpts) error {
 	return nil
 }
 
-func (p *RichPlugin) loadResourceArchive(ctx context.Context, ra *schema.ResourceArchive) error {
+func (p *MixedPlugin) loadResourceArchive(ctx context.Context, ra *schema.ResourceArchive) error {
 	archiver := resource.Archiver{RetainTopFolder: ra.RetainTopFolder}
 	tmp, err := os.MkdirTemp("", "")
 	if err != nil {
@@ -257,7 +257,7 @@ func (p *RichPlugin) loadResourceArchive(ctx context.Context, ra *schema.Resourc
 	return archiver.UnArchiver(path, toPath)
 }
 
-func (p *RichPlugin) LoadResourceMirror(ctx context.Context, rm *schema.ResourceMirror) error {
+func (p *MixedPlugin) LoadResourceMirror(ctx context.Context, rm *schema.ResourceMirror) error {
 	toPath := p.Pc.ResourcePath
 	if rm.Path != "" {
 		toPath = filepath.Join(p.Pc.ResourcePath, rm.Path)
@@ -272,7 +272,7 @@ func (p *RichPlugin) LoadResourceMirror(ctx context.Context, rm *schema.Resource
 	return nil
 }
 
-func (p *RichPlugin) loadResourceRepo(ctx context.Context, rr *schema.ResourceRepo) error {
+func (p *MixedPlugin) loadResourceRepo(ctx context.Context, rr *schema.ResourceRepo) error {
 	return errors.New("implement me")
 }
 
@@ -283,14 +283,10 @@ type Resolver struct {
 }
 
 func (r *Resolver) ResolvePath(_ context.Context, path string) (Plugin, error) {
-	s := &schema.RichPlugin{}
+	s := &schema.MixedPlugin{}
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("read %s failed, %w", path, err)
-	}
-	sum, err := getSum(data)
-	if err != nil {
-		return nil, fmt.Errorf("computing sum failed, data: %s, %w", data, err)
 	}
 	if err := s.Unmarshal(data, path); err != nil {
 		return nil, err
@@ -306,6 +302,10 @@ func (r *Resolver) ResolvePath(_ context.Context, path string) (Plugin, error) {
 	httpURL, _ := git.ToHttp(url, true)
 	paths := strings.TrimPrefix(strings.TrimSuffix(httpURL, ".git"), "https://")
 	wd := filepath.Join(r.PluginRootPath, paths)
+	sum, err := getSum(data)
+	if err != nil {
+		return nil, fmt.Errorf("computing sum failed, data: %s, %w", data, err)
+	}
 	pc := Context{
 		Path:              path,
 		Sum:               sum,
@@ -319,7 +319,7 @@ func (r *Resolver) ResolvePath(_ context.Context, path string) (Plugin, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &RichPlugin{
+	return &MixedPlugin{
 		Pc:       pc,
 		Schema:   s,
 		LoadInfo: loadInfo,

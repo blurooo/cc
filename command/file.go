@@ -32,11 +32,11 @@ type info struct {
 }
 
 // FileSearcher 文件指令查找器
-func FileSearcher(dir, commandDir string) Searcher {
-	cmdDir := filepath.Join(dir, commandDir)
+func FileSearcher(root, commandDir string) Searcher {
+	cmdDir := filepath.Join(root, commandDir)
 	return &fileSearcher{
 		CommandDir: cmdDir,
-		RootDir:    dir,
+		RootDir:    root,
 
 		cli: cli.New(),
 	}

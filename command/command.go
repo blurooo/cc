@@ -36,12 +36,12 @@ type Searcher interface {
 }
 
 // FullName 获取节点的完整名称
-func (n *Node) FullName(sep string) string {
+func (n *Node) FullName() string {
 	var name string
 	for cur := n; cur != nil; cur = cur.Parent {
 		name = cur.Name + name
 		if cur.Parent != nil {
-			name = sep + name
+			name = "." + name
 		}
 	}
 	return name

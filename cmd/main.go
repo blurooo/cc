@@ -1,45 +1,38 @@
 package main
 
 import (
-	"context"
-	"errors"
-	"os"
-	"os/exec"
-	"time"
-
-	"tencent2/tools/dev_tools/t2cli/exit"
-	"tencent2/tools/dev_tools/t2cli/report/data"
-	"tencent2/tools/dev_tools/t2cli/t2/cmd/flags"
-	"github.com/blurooo/cc/errs"
-	"github.com/blurooo/cc/ioc"
+	mixer "github.com/blurooo/cc"
+	"github.com/blurooo/cc/command"
+	"github.com/blurooo/cc/config"
 )
 
 func main() {
-	handleError(execute())
-}
-
-func execute() error {
-	exit.New(time.Second * 2).Listen(report)
-	return flags.Execute()
-}
-
-func report(ctx context.Context, _ os.Signal) {
-	err := ioc.Reporter.Report(ctx)
+	app := config.Application{
+		Name:      "mixer",
+		Desc:      "Devops 工具",
+		Debug:     false,
+		Version:   "v1.0.0",
+		GroupName: "mixer",
+		Flags: config.Flags{
+			EnableConfig:  true,
+			EnableInstall: true,
+			EnableDaemon:  true,
+			EnableDynamic: true,
+		},
+		InitPersistentConfig: config.PersistentConfig{
+			Command: config.Command{Repo: "https://git.woa.com/cli-market/t2-plugins.git"},
+		},
+	}
+	m, err := mixer.NewMixedCommandLineTool(app)
 	if err != nil {
-		ioc.Log.Debugf("数据上报异常：%v", err)
+		panic(err)
 	}
-}
-
-func handleError(err error) {
-	if err == nil {
-		exit.Gracefully(errs.CodeSuccess)
+	source := command.Source{
+		Workspace:    m.WorkspaceRootPath,
+		Configurator: m.Configurator,
 	}
-	ioc.Log.Errorf("%s [TraceID: %s]", err, data.TraceID())
-	var eErr *exec.ExitError
-	// 优先继承进程退出码
-	if ok := errors.As(err, &eErr); ok {
-		exit.Gracefully(eErr.ExitCode())
-	} else {
-		exit.Gracefully(errs.CodeUnknown)
+	err = m.Start([]command.SourceLoader{source.ConfigSource})
+	if err != nil {
+		panic(err)
 	}
 }

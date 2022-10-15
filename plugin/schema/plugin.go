@@ -11,7 +11,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type RichPlugin struct {
+type MixedPlugin struct {
 	Name       string            `yaml:"name" json:"name"`
 	Desc       string            `yaml:"desc" json:"desc"`
 	Version    string            `yaml:"version" json:"version"`
@@ -82,7 +82,7 @@ func (y *DependentPlugin) Filepath() string {
 	return y.RepoFile.File
 }
 
-func (p *RichPlugin) Unmarshal(data []byte, path string) error {
+func (p *MixedPlugin) Unmarshal(data []byte, path string) error {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return fmt.Errorf("read %s failed, %w", path, err)
@@ -98,10 +98,10 @@ func (p *RichPlugin) Unmarshal(data []byte, path string) error {
 	}
 }
 
-func (p *RichPlugin) UnmarshalJson(data []byte) error {
+func (p *MixedPlugin) UnmarshalJson(data []byte) error {
 	return json.Unmarshal(data, p)
 }
 
-func (p *RichPlugin) UnmarshalYaml(data []byte) error {
+func (p *MixedPlugin) UnmarshalYaml(data []byte) error {
 	return yaml.Unmarshal(data, p)
 }

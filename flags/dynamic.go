@@ -19,7 +19,7 @@ type cobraHelper func(cmd *cobra.Command, args []string)
 
 func (f *Flags) registerDynamicCommands(rc *cobra.Command) error {
 	// 获取动态命令
-	nodes, err := tc.Nodes()
+	nodes, err := f.CobraCommands.Nodes()
 	if err != nil {
 		return err
 	}
@@ -33,7 +33,7 @@ func (f *Flags) registerDynamicCommands(rc *cobra.Command) error {
 }
 
 func (f *Flags) toCommand(node command.Node) *cobra.Command {
-	fullName := node.FullName(nameSplit)
+	fullName := node.FullName()
 	var parentCmd *cobra.Command
 	// 如果存在原生指令集，则直接注册到该指令集内，完成融合
 	if nativeCommand, ok := commandIndex[fullName]; ok {
@@ -73,7 +73,7 @@ func (f *Flags) toSubCommand(node command.Node) *cobra.Command {
 		Use:   node.Name,
 		Short: node.Desc,
 		Long:  node.Desc,
-		RunE:  toCobraRunner(node),
+		RunE:  f.toCobraRunner(node),
 		// 动态命令不要自行打印错误造成干扰（help）
 		SilenceErrors: true,
 		SilenceUsage:  true,
@@ -86,9 +86,9 @@ func (f *Flags) toSubCommand(node command.Node) *cobra.Command {
 	return cmd
 }
 
-func toCobraRunner(node command.Node) cobraRunner {
+func (f *Flags) toCobraRunner(node command.Node) cobraRunner {
 	return func(cmd *cobra.Command, args []string) error {
-		return tc.ExecNode(node, args)
+		return f.CobraCommands.ExecNode(node, args)
 	}
 }
 
@@ -106,7 +106,7 @@ func (f *Flags) toCobraHelper(node command.Node, defaultHelper func(cmd *cobra.C
 			err = helper.Help(helpFile)
 		}
 		if err != nil {
-			f.Config.Logger.Errorf("get help failed: %v", err)
+			f.App.Logger.Errorf("get help failed: %v", err)
 		}
 	}
 }

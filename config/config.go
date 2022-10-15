@@ -3,7 +3,6 @@ package config
 import (
 	"path/filepath"
 
-	"github.com/blurooo/cc/command"
 	"github.com/blurooo/cc/log"
 	"github.com/spf13/cobra"
 )
@@ -19,7 +18,6 @@ type Application struct {
 	Version              string
 	CommandDirectory     string
 	GroupName            string
-	SourceLoaders        []command.SourceLoader
 	Logger               log.Logger
 	Flags                Flags
 	Handler              Handler
