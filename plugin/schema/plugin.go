@@ -15,13 +15,13 @@ type MixedPlugin struct {
 	Name       string            `yaml:"name" json:"name"`
 	Desc       string            `yaml:"desc" json:"desc"`
 	Version    string            `yaml:"version" json:"version"`
-	Dependency *Dependency       `yaml:"dep" json:"dep"`
-	Resource   *Resource         `yaml:"resource" json:"resource"`
+	Dependency Dependency        `yaml:"dep" json:"dep"`
+	Resource   Resource          `yaml:"resource" json:"resource"`
 	PreLoad    map[string]string `yaml:"pre_load"`
 	PostLoad   map[string]string `yaml:"post_load"`
 	PreRun     map[string]string `yaml:"pre_run"`
 	PostRun    map[string]string `yaml:"post_run"`
-	Enter      *Enter            `yaml:"enter" json:"enter"`
+	Entry      Entry             `yaml:"entry" json:"entry"`
 }
 
 type Dependency struct {
@@ -63,7 +63,7 @@ type ResourceMirror struct {
 	Path string            `yaml:"path"`
 }
 
-type Enter struct {
+type Entry struct {
 	Command map[string]string `yaml:"command" json:"command"`
 }
 
@@ -72,7 +72,7 @@ func (y *DependentPlugin) GetName() string {
 		return y.Name
 	}
 	name := filepath.Base(y.Filepath())
-	return strings.TrimSuffix(name, "."+filepath.Ext(name))
+	return strings.TrimSuffix(name, filepath.Ext(name))
 }
 
 func (y *DependentPlugin) Filepath() string {
@@ -89,9 +89,9 @@ func (p *MixedPlugin) Unmarshal(data []byte, path string) error {
 	}
 	ext := strings.ToLower(filepath.Ext(path))
 	switch ext {
-	case "yaml", "yml":
+	case ".yaml", ".yml":
 		return p.UnmarshalYaml(data)
-	case "json":
+	case ".json":
 		return p.UnmarshalJson(data)
 	default:
 		return fmt.Errorf("plugin protocol %s is not supported, %w", ext, errs.ErrUnsupportedPlugin)

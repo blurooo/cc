@@ -65,8 +65,8 @@ type Context struct {
 }
 
 type LoadInfo struct {
-	Sum      string
-	LoadTime time.Time
+	Sum      string    `json:"sum"`
+	LoadTime time.Time `json:"load_time"`
 }
 
 func (p *MixedPlugin) Name() string {
@@ -95,7 +95,7 @@ func (p *MixedPlugin) Execute(ctx context.Context, opts ExecOpts) error {
 	if err := p.exec(ctx, p.Schema.PreRun, ExecOpts{Envs: opts.Envs}); err != nil {
 		return fmt.Errorf("the plugin cannot be pre-run, %w", err)
 	}
-	if err := p.exec(ctx, p.Schema.Enter.Command, opts); err != nil {
+	if err := p.exec(ctx, p.Schema.Entry.Command, opts); err != nil {
 		return err
 	}
 	if err := p.exec(ctx, p.Schema.PostRun, ExecOpts{Envs: opts.Envs}); err != nil {
@@ -167,9 +167,6 @@ func (p *MixedPlugin) writeLoadInfo() error {
 }
 
 func (p *MixedPlugin) loadDependencies(ctx context.Context, opts LoadOpts) error {
-	if p.Schema.Dependency == nil {
-		return nil
-	}
 	for _, plugin := range p.Schema.Dependency.Plugins {
 		if err := p.loadDependentPlugin(ctx, plugin, opts); err != nil {
 			return fmt.Errorf("load dependenct plugin %s failed, %w", plugin.GetName(), err)
@@ -278,7 +275,6 @@ func (p *MixedPlugin) loadResourceRepo(ctx context.Context, rr *schema.ResourceR
 type Resolver struct {
 	Name           string
 	PluginRootPath string
-	BinPath        string
 }
 
 func (r *Resolver) ResolvePath(_ context.Context, path string) (Plugin, error) {
@@ -290,17 +286,7 @@ func (r *Resolver) ResolvePath(_ context.Context, path string) (Plugin, error) {
 	if err := s.Unmarshal(data, path); err != nil {
 		return nil, err
 	}
-	gi, err := git.Instance(path)
-	if err != nil {
-		return nil, err
-	}
-	url, err := gi.GetRemoteUrl("origin")
-	if err != nil {
-		return nil, err
-	}
-	httpURL, _ := git.ToHttp(url, true)
-	paths := strings.TrimPrefix(strings.TrimSuffix(httpURL, ".git"), "https://")
-	wd := filepath.Join(r.PluginRootPath, paths)
+	root, wd, err := r.pluginSourceAndWorkspace(path)
 	sum, err := getSum(data)
 	if err != nil {
 		return nil, fmt.Errorf("computing sum failed, data: %s, %w", data, err)
@@ -309,7 +295,7 @@ func (r *Resolver) ResolvePath(_ context.Context, path string) (Plugin, error) {
 		Path:              path,
 		Sum:               sum,
 		Workspace:         wd,
-		CommandSourcePath: gi.RootPath(),
+		CommandSourcePath: root,
 		BinPath:           filepath.Join(wd, ".bin"),
 		ResourcePath:      filepath.Join(wd, ".resource"),
 		LoadFile:          filepath.Join(wd, ".load_info"),
@@ -326,8 +312,31 @@ func (r *Resolver) ResolvePath(_ context.Context, path string) (Plugin, error) {
 	}, nil
 }
 
+func (r *Resolver) pluginSourceAndWorkspace(path string) (string, string, error) {
+	gi, err := git.Instance(path)
+	if err != nil {
+		return "", "", err
+	}
+	root := gi.RootPath()
+	rp, err := filepath.Rel(root, path)
+	if err != nil {
+		return "", "", fmt.Errorf("can't get the relative path between %s and %s", root, path)
+	}
+	url, err := gi.GetRemoteUrl("origin")
+	if err != nil {
+		return "", "", err
+	}
+	httpURL, _ := git.ToHttp(url, true)
+	paths := strings.TrimPrefix(strings.TrimSuffix(httpURL, ".git"), "https://")
+	return root, filepath.Join(r.PluginRootPath, paths, trimExt(rp)), nil
+}
+
 func (r *Resolver) ResolveRepoFile(_ context.Context, repo, ref, path string) (Plugin, error) {
 	return nil, errors.New("implement me")
+}
+
+func trimExt(path string) string {
+	return strings.TrimSuffix(path, filepath.Ext(path))
 }
 
 func readLoadInfo(loadFile string) (*LoadInfo, error) {
@@ -378,7 +387,7 @@ func selectResource(resource map[string]string) (string, bool) {
 
 func getPluginName(path string) string {
 	name := filepath.Base(path)
-	return strings.TrimSuffix(name, "."+filepath.Ext(name))
+	return strings.TrimSuffix(name, filepath.Ext(name))
 }
 
 func getSum(data []byte) (string, error) {

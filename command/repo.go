@@ -11,12 +11,12 @@ import (
 )
 
 type repoSearcher struct {
+	App          config.Application
 	AutoUpdate   bool
 	AuthUser     string
 	AuthPassword string
 	RepoURL      string
 	CommandDir   string
-	RepoRootPath string
 }
 
 // RepoSearcher 仓库指令查找器
@@ -27,7 +27,7 @@ func RepoSearcher(app config.Application, repoURL string, commandDir string) Sea
 		AuthPassword: app.InitPersistentConfig.Repo.Password,
 		RepoURL:      repoURL,
 		CommandDir:   commandDir,
-		RepoRootPath: app.WorkspaceLayout.RepoRootPath,
+		App:          app,
 	}
 }
 
@@ -62,14 +62,14 @@ func (r *repoSearcher) toFileSearcher() (Searcher, error) {
 	if err := r.pull(); err != nil {
 		return nil, err
 	}
-	return FileSearcher(r.repoWorkspace(), r.CommandDir), nil
+	return FileSearcher(r.App, r.repoWorkspace(), r.CommandDir), nil
 }
 
 func (r *repoSearcher) repoWorkspace() string {
 	httpRepo, _ := git.ToHttp(r.RepoURL, true)
 	pathStr := strings.TrimPrefix(strings.TrimSuffix(httpRepo, ".git"), "https://")
 	paths := strings.Split(pathStr, "/")
-	return filepath.Join(r.RepoRootPath, filepath.Join(paths...))
+	return filepath.Join(r.App.WorkspaceLayout.RepoRootPath, filepath.Join(paths...))
 }
 
 func (r *repoSearcher) pull() error {

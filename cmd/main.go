@@ -20,11 +20,7 @@ func main() {
 			EnableDynamic: true,
 		},
 		InitPersistentConfig: config.PersistentConfig{
-			Command: config.Command{Repo: ""},
-			Repo: config.Repo{
-				User:     "",
-				Password: "",
-			},
+			Command: config.Command{Repo: "https://github.com/modern-devops/devops-plugins.git"},
 		},
 	}
 	m, err := mixer.NewMixedCommandLineTool(app)

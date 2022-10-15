@@ -42,7 +42,7 @@ func RenderFile(path string) error {
 
 // IsMarkdown will tell you whether the file is markdown or not.
 func IsMarkdown(path string) bool {
-	return strings.ToLower(filepath.Ext(path)) == "md"
+	return strings.ToLower(filepath.Ext(path)) == ".md"
 }
 
 func showContent(content []byte) error {

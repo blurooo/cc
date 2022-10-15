@@ -33,7 +33,7 @@ func (s *Source) EnvSource() ([]Searcher, error) {
 func (s *Source) ProjectSource() ([]Searcher, error) {
 	cmd := filepath.Join(s.Workspace, "."+s.App.Name)
 	if d, err := os.Stat(cmd); err == nil && d.IsDir() {
-		return []Searcher{FileSearcher(cmd, s.App.CommandDirectory)}, nil
+		return []Searcher{FileSearcher(s.App, cmd, s.App.CommandDirectory)}, nil
 	}
 	return nil, nil
 }
@@ -67,7 +67,7 @@ func (s *Source) ConfigSource() ([]Searcher, error) {
 		return []Searcher{RepoSearcher(s.App, pc.Command.Repo, s.App.CommandDirectory)}, nil
 	}
 	if pc.Command.Path != "" {
-		return []Searcher{FileSearcher(pc.Command.Path, "")}, nil
+		return []Searcher{FileSearcher(s.App, pc.Command.Path, "")}, nil
 	}
 	return nil, nil
 }

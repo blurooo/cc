@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/blurooo/cc/cli"
+	"github.com/blurooo/cc/config"
 	"github.com/blurooo/cc/errs"
 	"github.com/blurooo/cc/plugin"
 	"gopkg.in/yaml.v3"
@@ -32,11 +33,15 @@ type info struct {
 }
 
 // FileSearcher 文件指令查找器
-func FileSearcher(root, commandDir string) Searcher {
+func FileSearcher(app config.Application, root, commandDir string) Searcher {
 	cmdDir := filepath.Join(root, commandDir)
 	return &fileSearcher{
 		CommandDir: cmdDir,
 		RootDir:    root,
+		Resolver: &plugin.Resolver{
+			Name:           app.Name,
+			PluginRootPath: app.WorkspaceLayout.PluginRootPath,
+		},
 
 		cli: cli.New(),
 	}
