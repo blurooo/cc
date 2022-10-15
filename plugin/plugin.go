@@ -16,7 +16,6 @@ import (
 	"time"
 
 	"github.com/blurooo/cc/cli"
-	"github.com/blurooo/cc/flags"
 	"github.com/blurooo/cc/pkg/linker"
 	"github.com/blurooo/cc/plugin/schema"
 	"github.com/blurooo/cc/resource"
@@ -192,7 +191,7 @@ func (p *MixedPlugin) loadDependentPlugin(ctx context.Context, dp *schema.Depend
 	}
 	pc := plugin.Context()
 	// call _exec subcommand to run dependent plugin
-	command := fmt.Sprintf(`%s %s "%s"`, p.Loader.Name, flags.ExecCommand.Name(), pc.Path)
+	command := fmt.Sprintf(`%s __exec "%s"`, p.Loader.Name, pc.Path)
 	_, err = linker.New(dp.GetName(), pc.BinPath, command, linker.OverrideAlways)
 	return err
 }

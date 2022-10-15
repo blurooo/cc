@@ -7,7 +7,6 @@ import (
 
 	"github.com/blurooo/cc/command"
 	"github.com/blurooo/cc/pkg/helper"
-	"github.com/blurooo/cc/tc"
 	"github.com/spf13/cobra"
 )
 
@@ -98,7 +97,7 @@ func (f *Flags) toCobraHelper(node command.Node, defaultHelper func(cmd *cobra.C
 		var err error
 		if _, err = os.Stat(helpFile); err != nil {
 			if defaultHelper == nil {
-				err = tc.ExecNode(node, []string{"--help"})
+				err = f.CobraCommands.ExecNode(node, []string{"--help"})
 			} else {
 				defaultHelper(cmd, args)
 			}

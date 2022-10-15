@@ -1,18 +1,19 @@
 package flags
 
 import (
+	"github.com/blurooo/cc/config"
 	"github.com/spf13/cobra"
-
-	"github.com/blurooo/cc/tc"
 )
 
-var daemonCommand = &cobra.Command{
-	Use:    "__daemon",
-	Short:  "启用常驻进程",
-	Hidden: true,
-	RunE:   commandDaemon,
-}
+const DaemonName = "__daemon"
 
-func commandDaemon(_ *cobra.Command, _ []string) error {
-	return tc.StartDaemon()
+func GetDaemonCommand(app config.Application) *cobra.Command {
+	return &cobra.Command{
+		Use:    DaemonName,
+		Short:  "启用常驻进程",
+		Hidden: true,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			return app.Handler.OnDaemon(cmd)
+		},
+	}
 }

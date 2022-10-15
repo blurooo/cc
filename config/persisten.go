@@ -40,7 +40,7 @@ func NewConfigurator(configFile string, defaultConfig PersistentConfig) (*Config
 	if err != nil {
 		return nil, err
 	}
-	if err := cfg.MapTo(defaultConfig); err != nil {
+	if err := cfg.MapTo(&defaultConfig); err != nil {
 		return nil, err
 	}
 	return &Configurator{

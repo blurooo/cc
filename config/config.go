@@ -28,6 +28,7 @@ type Application struct {
 type Handler struct {
 	OnInitialize         func()
 	OnPreRegisterCommand func(command *cobra.Command) error
+	OnDaemon             func(command *cobra.Command) error
 }
 
 type Flags struct {

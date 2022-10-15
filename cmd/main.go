@@ -20,7 +20,11 @@ func main() {
 			EnableDynamic: true,
 		},
 		InitPersistentConfig: config.PersistentConfig{
-			Command: config.Command{Repo: "https://git.woa.com/cli-market/t2-plugins.git"},
+			Command: config.Command{Repo: ""},
+			Repo: config.Repo{
+				User:     "",
+				Password: "",
+			},
 		},
 	}
 	m, err := mixer.NewMixedCommandLineTool(app)
@@ -29,6 +33,7 @@ func main() {
 	}
 	source := command.Source{
 		Workspace:    m.WorkspaceRootPath,
+		App:          m.App,
 		Configurator: m.Configurator,
 	}
 	err = m.Start([]command.SourceLoader{source.ConfigSource})

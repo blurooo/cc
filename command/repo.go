@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/blurooo/cc/config"
 	"github.com/blurooo/cc/tools/git"
 )
 
@@ -19,8 +20,15 @@ type repoSearcher struct {
 }
 
 // RepoSearcher 仓库指令查找器
-func RepoSearcher(repoURL string, commandDir string) Searcher {
-	return &repoSearcher{RepoURL: repoURL, CommandDir: commandDir}
+func RepoSearcher(app config.Application, repoURL string, commandDir string) Searcher {
+	return &repoSearcher{
+		AutoUpdate:   false,
+		AuthUser:     app.InitPersistentConfig.Repo.User,
+		AuthPassword: app.InitPersistentConfig.Repo.Password,
+		RepoURL:      repoURL,
+		CommandDir:   commandDir,
+		RepoRootPath: app.WorkspaceLayout.RepoRootPath,
+	}
 }
 
 // List 从远程仓库搜集指令列表

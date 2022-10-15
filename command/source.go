@@ -14,11 +14,9 @@ import (
 type SourceLoader func() ([]Searcher, error)
 
 type Source struct {
-	Workspace        string
-	Name             string
-	GroupName        string
-	CommandDirectory string
-	Configurator     *config.Configurator
+	App          config.Application
+	Configurator *config.Configurator
+	Workspace    string
 }
 
 func (s *Source) EnvSource() ([]Searcher, error) {
@@ -29,13 +27,13 @@ func (s *Source) EnvSource() ([]Searcher, error) {
 	if !git.IsGitUrl(source) {
 		return nil, fmt.Errorf("invalid repository url: %s", source)
 	}
-	return []Searcher{RepoSearcher(source, s.CommandDirectory)}, nil
+	return []Searcher{RepoSearcher(s.App, source, s.App.CommandDirectory)}, nil
 }
 
 func (s *Source) ProjectSource() ([]Searcher, error) {
-	cmd := filepath.Join(s.Workspace, "."+s.Name)
+	cmd := filepath.Join(s.Workspace, "."+s.App.Name)
 	if d, err := os.Stat(cmd); err == nil && d.IsDir() {
-		return []Searcher{FileSearcher(cmd, s.CommandDirectory)}, nil
+		return []Searcher{FileSearcher(cmd, s.App.CommandDirectory)}, nil
 	}
 	return nil, nil
 }
@@ -58,7 +56,7 @@ func (s *Source) ProjectGroupSource() ([]Searcher, error) {
 	}
 	searchers := make([]Searcher, 0, len(groups))
 	for _, group := range groups {
-		searchers = append(searchers, RepoSearcher(group, s.CommandDirectory))
+		searchers = append(searchers, RepoSearcher(s.App, group, s.App.CommandDirectory))
 	}
 	return searchers, nil
 }
@@ -66,7 +64,7 @@ func (s *Source) ProjectGroupSource() ([]Searcher, error) {
 func (s *Source) ConfigSource() ([]Searcher, error) {
 	pc := s.Configurator.LoadConfig()
 	if pc.Command.Repo != "" {
-		return []Searcher{RepoSearcher(pc.Command.Repo, s.CommandDirectory)}, nil
+		return []Searcher{RepoSearcher(s.App, pc.Command.Repo, s.App.CommandDirectory)}, nil
 	}
 	if pc.Command.Path != "" {
 		return []Searcher{FileSearcher(pc.Command.Path, "")}, nil
@@ -75,7 +73,7 @@ func (s *Source) ConfigSource() ([]Searcher, error) {
 }
 
 func (s *Source) RepositorySource(url string) ([]Searcher, error) {
-	return []Searcher{RepoSearcher(url, s.CommandDirectory)}, nil
+	return []Searcher{RepoSearcher(s.App, url, s.App.CommandDirectory)}, nil
 }
 
 func (s *Source) groupUrls(repo string) []string {
@@ -97,7 +95,7 @@ func (s *Source) groupUrls(repo string) []string {
 	for _, group := range groups {
 		nextGroup += group + "/"
 		groupRepo := fmt.Sprintf("%s://%s/%s%s.git", uri.Scheme,
-			uri.Host, nextGroup, s.GroupName)
+			uri.Host, nextGroup, s.App.GroupName)
 		repos = append(repos, groupRepo)
 	}
 	return repos

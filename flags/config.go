@@ -2,13 +2,10 @@ package flags
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-
-	"github.com/blurooo/cc/tc"
 )
 
 var configFlags = struct {
@@ -21,22 +18,24 @@ var updateFlags = struct {
 	All bool
 }{}
 
-var configCommand = &cobra.Command{
-	Use:               "config",
-	Short:             "配置域相关能力，包括工具版本、程序运行参数等",
-	ValidArgsFunction: EnableFlagsCompletion,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		if configFlags.list {
-			return handleList()
-		}
-		if len(configFlags.getters) > 0 {
-			return handleGetter()
-		}
-		if len(configFlags.setters) > 0 {
-			return handleSetter()
-		}
-		return cmd.Help()
-	},
+func (f *Flags) getConfigCommand() *cobra.Command {
+	return &cobra.Command{
+		Use:               "config",
+		Short:             "配置域相关能力，包括工具版本、程序运行参数等",
+		ValidArgsFunction: EnableFlagsCompletion,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if configFlags.list {
+				return f.handleList()
+			}
+			if len(configFlags.getters) > 0 {
+				return f.handleGetter()
+			}
+			if len(configFlags.setters) > 0 {
+				return f.handleSetter()
+			}
+			return cmd.Help()
+		},
+	}
 }
 
 var initCommand = &cobra.Command{
@@ -44,12 +43,13 @@ var initCommand = &cobra.Command{
 	Short:  "初始化程序",
 	Hidden: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		execPath, err := os.Executable()
-		if err != nil {
-			return fmt.Errorf("获取当前程序的执行路径失败：%w", err)
-		}
-		_, err = tc.Init(execPath)
-		return err
+		// execPath, err := os.Executable()
+		// if err != nil {
+		// 	return fmt.Errorf("获取当前程序的执行路径失败：%w", err)
+		// }
+		// _, err = tc.Init(execPath)
+		// return err
+		return nil
 	},
 }
 
@@ -58,7 +58,8 @@ var updateCommand = &cobra.Command{
 	Short:             "更新所有工具版本",
 	ValidArgsFunction: EnableFlagsCompletion,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return tc.UpdateTools(tc.UpdateStrategy{All: updateFlags.All})
+		// return tc.UpdateTools(tc.UpdateStrategy{All: updateFlags.All})
+		return nil
 	},
 }
 
@@ -66,18 +67,18 @@ func setUpdateFlags() {
 	updateCommand.Flags().BoolVar(&updateFlags.All, "all", false, "update all")
 }
 
-func setConfigFlags() {
-	configCommand.Flags().StringArrayVar(&configFlags.getters, "get", nil, "获取程序配置，支持多条")
-	configCommand.Flags().StringArrayVar(&configFlags.setters, "set", nil, "设置程序运行时参数，支持多条")
-	configCommand.Flags().BoolVar(&configFlags.list, "list", false, "获取配置列表")
+func (f *Flags) setConfigFlags(cmd *cobra.Command) {
+	cmd.Flags().StringArrayVar(&configFlags.getters, "get", nil, "获取程序配置，支持多条")
+	cmd.Flags().StringArrayVar(&configFlags.setters, "set", nil, "设置程序运行时参数，支持多条")
+	cmd.Flags().BoolVar(&configFlags.list, "list", false, "获取配置列表")
 
-	_ = configCommand.RegisterFlagCompletionFunc("get", configCompletion)
-	_ = configCommand.RegisterFlagCompletionFunc("set", configCompletion)
+	_ = cmd.RegisterFlagCompletionFunc("get", f.configCompletion)
+	_ = cmd.RegisterFlagCompletionFunc("set", f.configCompletion)
 }
 
-func configCompletion(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
+func (f *Flags) configCompletion(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
 	// 动态补全可用的配置列表
-	configs, err := tc.ListValidConfig()
+	configs, err := f.Configurator.ListUsableConfigs()
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveDefault
 	}
@@ -88,12 +89,12 @@ func configCompletion(_ *cobra.Command, _ []string, _ string) ([]string, cobra.S
 	return completionArgs, cobra.ShellCompDirectiveDefault
 }
 
-func handleSetter() error {
+func (f *Flags) handleSetter() error {
 	for _, setter := range configFlags.setters {
 		items := strings.Split(setter, "=")
 		key := items[0]
 		value := strings.Join(items[1:], "=")
-		err := tc.SetConfig(key, value)
+		err := f.Configurator.SetConfig(key, value)
 		if err != nil {
 			return fmt.Errorf("配置参数 %s 失败：%w", setter, err)
 		}
@@ -101,10 +102,10 @@ func handleSetter() error {
 	return nil
 }
 
-func handleGetter() error {
+func (f *Flags) handleGetter() error {
 	showValueOnly := len(configFlags.getters) == 1
 	for _, getter := range configFlags.getters {
-		v, err := tc.GetConfig(getter)
+		v, err := f.Configurator.GetConfig(getter)
 		if err != nil {
 			return fmt.Errorf("获取配置 %s 失败：%w", getter, err)
 		}
@@ -117,8 +118,8 @@ func handleGetter() error {
 	return nil
 }
 
-func handleList() error {
-	items, err := tc.ListConfig()
+func (f *Flags) handleList() error {
+	items, err := f.Configurator.ListUsedConfigs()
 	if err != nil {
 		return err
 	}

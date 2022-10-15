@@ -19,12 +19,13 @@ import (
 
 const nameSplit = "."
 
-const daemonName = "cc.daemon"
+const daemonName = "mixer.daemon"
 
 var commandIndex = map[string]*cobra.Command{}
 
 type Flags struct {
 	App           config.Application
+	Configurator  config.Configurator
 	CobraCommands command.CobraCommands
 }
 
@@ -173,7 +174,7 @@ func (f *Flags) daemonProcess() *daemon.AsyncProcess {
 		// 传递版本，使得在 tc 更新版本时，得以重载守护进程
 		Version:     f.App.Version,
 		WorkDir:     f.App.WorkspaceLayout.RootPath,
-		Args:        []string{daemonCommand.Name()},
+		Args:        []string{DaemonName},
 		Singleton:   true,
 		ProcessFile: filepath.Join(f.App.WorkspaceLayout.DaemonPath, fmt.Sprintf("%s.pid", daemonName)),
 		LogFile:     filepath.Join(f.App.WorkspaceLayout.DaemonPath, fmt.Sprintf("%s.log", daemonName)),
@@ -191,17 +192,18 @@ func (f *Flags) initBuiltinCmd(rc *cobra.Command) {
 
 	addToRootCmd(rc, GetExecCommand(f.App))
 	if f.App.Flags.EnableConfig {
-		setConfigFlags()
-		addToRootCmd(rc, configCommand)
+		cc := f.getConfigCommand()
+		f.setConfigFlags(cc)
+		addToRootCmd(rc, cc)
 	}
 
 	addToRootCmd(rc, initCommand)
 	setUpdateFlags()
 	addToRootCmd(rc, updateCommand)
 	if f.App.Flags.EnableDaemon {
-		addToRootCmd(rc, daemonCommand)
+		addToRootCmd(rc, GetDaemonCommand(f.App))
 	}
-	AddInstallCommand(rc, f.App)
+	// AddInstallCommand(rc, f.App)
 	addToRootCmd(rc, getCompletingCommand(rc))
 }
 
@@ -226,5 +228,5 @@ func skipDaemon(cmd *cobra.Command) bool {
 	if cmd == nil {
 		return false
 	}
-	return cmd.Hidden && cmd != daemonCommand
+	return cmd.Hidden && cmd.Name() != DaemonName
 }
